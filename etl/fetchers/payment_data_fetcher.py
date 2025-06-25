@@ -16,9 +16,7 @@ import time
 import logging
 from typing import Any
 from botocore.exceptions import BotoCoreError, ClientError
-from dynaconf import Dynaconf
 
-# Setup basic logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -29,22 +27,21 @@ class PaymentDataFetcher:
     Includes manifest and _SUCCESS marker for downstream processing coordination.
     """
 
-    def __init__(self, settings: Dynaconf):
+    def __init__(self, bucket_name, payment_api_base_url, max_retries, backoff_factor):
         """
         Initialize the fetcher with required configuration.
 
         Args:
-            settings: A settings object (e.g., from Dynaconf) that includes:
-                - bucket_name: Name of the target S3 bucket.
-                - payment_api_base_url: Base URL of the payment report API.
-                - max_retries: Max number of retry attempts on API failure.
-                - backoff_factor: Exponential backoff multiplier.
+
+            - bucket_name: Name of the target S3 bucket.
+            - payment_api_base_url: Base URL of the payment report API.
+            - max_retries: Max number of retry attempts on API failure.
+            - backoff_factor: Exponential backoff multiplier.
         """
-        self.settings = settings
-        self.bucket_name = settings.bucket_name
-        self.api_base_url = settings.payment_api_base_url.rstrip("?&")
-        self.max_retries = settings.max_retries
-        self.backoff_factor = settings.backoff_factor
+        self.bucket_name = bucket_name
+        self.api_base_url = payment_api_base_url.rstrip("?&")
+        self.max_retries = max_retries
+        self.backoff_factor = backoff_factor
         self.s3 = boto3.client("s3")
 
     def _get_page(self, start_date: str, end_date: str, page: int) -> dict:
