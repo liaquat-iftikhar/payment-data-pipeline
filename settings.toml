@@ -1,0 +1,11 @@
+[default]
+bucket_name = "s3-bucket-name"
+payment_api_base_url = "https://payment-provider.com/reports"
+max_retries = 3
+backoff_factor = 2.0
+
+[development]
+bucket_name = "dev-s3-bucket"
+
+[production]
+bucket_name = "prod-s3-bucket"
