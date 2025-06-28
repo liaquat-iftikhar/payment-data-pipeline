@@ -18,10 +18,9 @@ class ManifestReader:
     def __init__(self, spark: SparkSession, manifest_file_info: dict):
         self.spark = spark
         self.manifest_file_info = manifest_file_info
-        self.bucket = manifest_file_info.get("bucket_name")
         self.manifest_path = manifest_file_info.get("manifest_path")
 
-        if not self.manifest_path or not self.bucket:
+        if not self.manifest_path:
             raise ValueError("Missing required manifest metadata: 'bucket_name' or 'manifest_path'.")
 
     def get_file_paths(self) -> List[str]:
@@ -46,9 +45,8 @@ class ManifestReader:
             if not isinstance(keys, list) or not keys:
                 raise ValueError("Manifest 'uploaded_keys' is empty or malformed.")
 
-            file_paths = [f"s3://{self.bucket}/{key}" for key in keys]
-            logger.info(f"Found {len(file_paths)} files in manifest.")
-            return file_paths
+            logger.info(f"Found {len(keys)} files in manifest.")
+            return keys
 
         except Exception as e:
             logger.error(f"Failed to read or parse manifest file: {e}")
