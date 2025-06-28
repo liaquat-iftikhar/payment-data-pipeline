@@ -55,27 +55,3 @@ class S3Uploader:
         except (BotoCoreError, ClientError, ValueError) as e:
             logger.error(f"Upload failed for s3://{self.bucket}/{key}: {e}")
             raise RuntimeError(f"S3 upload failed for {key}") from e
-
-    def upload_marker(self, prefix: str, marker_name: str = "_SUCCESS") -> str:
-        """
-        Uploads a marker file to S3, typically used to signal successful completion.
-
-        Args:
-            prefix (str): S3 prefix where marker will be stored.
-            marker_name (str): Marker file name (default: "_SUCCESS").
-
-        Returns:
-            str: Full S3 URI of the uploaded marker.
-
-        Raises:
-            RuntimeError: If the marker upload fails.
-        """
-        key = f"{prefix.rstrip('/')}/{marker_name}"
-        try:
-            logger.info(f"Uploading marker to s3://{self.bucket}/{key}")
-            self.s3.put_object(Body="", Bucket=self.bucket, Key=key)
-            return f"s3://{self.bucket}/{key}"
-
-        except (BotoCoreError, ClientError) as e:
-            logger.error(f"Failed to upload marker file {marker_name} to s3://{self.bucket}/{key}: {e}")
-            raise RuntimeError(f"Failed to upload marker file {marker_name}") from e
