@@ -6,6 +6,8 @@ from pipeline.curated.extract.raw_data_extractor import RawDataExtractor
 from pipeline.utils.spark_session_builder import SparkSessionBuilder
 from pipeline.utils.s3_partitioned_data_loader import S3PartitionedDataLoader
 
+import pyspark.sql.functions as F
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -28,6 +30,8 @@ class GamePaymentCuratedPipeline:
         table (str): Glue catalog table name
         partition_col (str): Column used for partitioning (e.g. payment_date)
     """
+
+    REQUIRED_COLUMNS = {"transaction_id", "game", "price", "currency", "status"}
 
     def __init__(
         self,
@@ -67,6 +71,35 @@ class GamePaymentCuratedPipeline:
             f"MSCK REPAIR TABLE {self.database}.{self.table}"
         ]
 
+    def _validate_data(self, df) -> None:
+        logger.info("Running data quality checks on raw DataFrame...")
+
+        # Check if empty
+        if df.rdd.isEmpty():
+            logger.error("Input DataFrame is empty.")
+            raise ValueError("Empty DataFrame: no data to process.")
+
+        # Check required columns
+        missing = self.REQUIRED_COLUMNS - set(df.columns)
+        if missing:
+            logger.error(f"Missing required columns: {missing}")
+            raise ValueError(f"Missing columns: {missing}")
+
+        # Check for nulls in critical fields
+        for col in ["transaction_id", "currency", "status"]:
+            nulls = df.filter(F.col(col).isNull()).count()
+            if nulls > 0:
+                logger.error(f"Column '{col}' has {nulls} null values.")
+                raise ValueError(f"Column '{col}' contains nulls.")
+
+        # Check for negative price
+        negative_prices = df.filter(F.col("price") < 0).count()
+        if negative_prices > 0:
+            logger.error(f"'price' has {negative_prices} negative values.")
+            raise ValueError("Invalid values in 'price': cannot be negative.")
+
+        logger.info("Data quality checks passed.")
+
     def run(self) -> List[str]:
         """
         Executes the full ETL pipeline.
@@ -89,6 +122,10 @@ class GamePaymentCuratedPipeline:
 
                 raw_df = data_extractor.extract(raw_files)
                 logger.info("Raw data successfully loaded into Spark DataFrame.")
+
+                # Data quality check
+                self._validate_data(raw_df)
+                logger.info("Data Quality checks executed successfully.")
 
                 # Write to S3 and collect updated partitions
                 partitions = S3PartitionedDataLoader(
