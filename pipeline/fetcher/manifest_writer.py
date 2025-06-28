@@ -42,7 +42,7 @@ class ManifestWriter:
         manifest_data = {"uploaded_keys": full_paths}
 
         try:
-            logger.info(f"Uploading manifest to s3://{self.uploader.bucket_name}/{key}")
+            logger.info(f"Uploading manifest to s3://{self.uploader.bucket}/{key}")
             return self.uploader.upload_json(manifest_data, key)
         except Exception as e:
             logger.error(f"Failed to upload manifest to S3: {e}")

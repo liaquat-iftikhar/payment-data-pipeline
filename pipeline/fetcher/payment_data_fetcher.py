@@ -85,7 +85,7 @@ class PaymentDataFetcher:
         if uploaded_paths:
             manifest_s3_uri = self.manifest_writer.write_manifest(prefix, uploaded_paths)
             self.uploader.upload_marker(prefix)
-            logger.info("Manifest and _SUCCESS marker written.")
+            logger.info("Manifest file written.")
             return {
                 "status": "success",
                 "manifest_path": manifest_s3_uri,
