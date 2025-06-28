@@ -3,7 +3,7 @@ import pendulum
 from datetime import timedelta
 
 from airflow.decorators import dag, task
-from dynaconf import settings
+from dynaconf import Dynaconf
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -15,6 +15,11 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
+settings = Dynaconf(
+    settings_files=['config/settings.toml'],  # Path to your settings file(s)
+    envvar_prefix="DYNACONF",
+    environments=True
+)
 
 @dag(
     dag_id="payment_data_pipeline",
@@ -89,10 +94,10 @@ def payment_data_pipeline():
         manifest_file_info = {"manifest_path": manifest_path}
         pipeline = GamePaymentCuratedPipeline(
             manifest_file_info=manifest_file_info,
-            output_path=f"s3://{settings.s3_bucket}/curated/game_payments",
-            database=settings.database,
+            output_path=settings.curated_output_path,
+            database=settings.curated_database,
             table=settings.curated_table,
-            partition_col=settings.partition_column,
+            partition_col=settings.curated_partition_column,
         )
 
         partitions = pipeline.run()
@@ -119,9 +124,9 @@ def payment_data_pipeline():
         enriched_pipeline = EnrichedGamePaymentPipeline(
             input_partitions=partitions,
             enriched_output=settings.enriched_output_path,
-            database=settings.database,
+            database=settings.enriched_database,
             table=settings.enriched_table,
-            partition_col=settings.partition_column,
+            partition_col=settings.enriched_partition_column,
         )
         enriched_pipeline.run()
         logger.info("Enrichment pipeline completed successfully")
