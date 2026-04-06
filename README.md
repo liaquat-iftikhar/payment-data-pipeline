@@ -31,6 +31,51 @@ This repository contains a scalable data engineering pipeline for payment data i
 
 ---
 
+---
+## Schema
+### Raw Layer 
+**PATH:** `s3://<bucket>/raw/payments_<start_date>_<end_date>/`
+
+Each file is a JSON array of payment records fetched from the external API.
+
+| Field            | Type   | Description                                           |
+| ---------------- | ------ | ----------------------------------------------------- |
+| `transaction_id` | string | Unique ID of the payment transaction                  |
+| `game`           | string | Name or ID of the game                                |
+| `price`          | float  | Amount paid in the given currency                     |
+| `currency`       | string | Currency code (e.g., "USD", "EUR")                    |
+| `status`         | string | Status of the transaction (e.g., "SUCCESS", "FAILED") |
+| `payment_date`   | string | Date of transaction (format: YYYY-MM-DD)              |
+
+### Curated Layer
+**PATH:** `s3://<bucket>/curated/payments/`
+
+Stored as partitioned Parquet by payment_date. Same fields as raw, stored in a normalized format:
+
+| Column           | Type                      |
+| ---------------- | ------------------------- |
+| `transaction_id` | string                    |
+| `game`           | string                    |
+| `price`          | double                    |
+| `currency`       | string                    |
+| `status`         | string                    |
+| `payment_date`   | string (partition column) |
+
+
+### Enriched Layer
+**PATH:** `s3://<bucket>/enriched/daily_game_payments/`
+
+Partitioned by payment_date. Aggregated metrics per game and date.
+
+| Column                    | Type   | Description                       |
+| ------------------------- | ------ | --------------------------------- |
+| `game`                    | string | Game name                         |
+| `payment_date`            | string | Partition column                  |
+| `total_revenue_in_usd`    | double | Sum of successful payments in USD |
+| `successful_transactions` | long   | Count of successful transactions  |
+
+---
+
 ## Setup
 
 ### Prerequisites

@@ -22,7 +22,7 @@ class SuccessfulGamePaymentAggregator:
     # Hardcoded currency conversion rates to USD.
     # NOTE: These rates are static and used only for assignment/demo purposes.
     # In a real-world scenario, rates should come from a trusted external source,
-    # such as a currency rates API or a historical exchange rate table in the data lake.
+    # such as a currency rates API gor a historical exchange rate table in the data lake.
     CONVERSION_RATES = {
         "USD": 1.0,
         "EUR": 1.1,
